@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Post = require("../models/Post");
+const upload = require("../middleware/upload");
 
 // Get all posts
 router.get("/", async (req, res) => {
@@ -21,13 +22,24 @@ router.get("/:id", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
+
 });
 
-// Create post
-router.post("/", async (req, res) => {
-  const { title, body, author } = req.body;
+
+// Create post - file or url image
+router.post("/", upload.single("image"), async (req, res) => {
+  const { title, body, author, imageUrl } = req.body;
+
+  let imagePath = "";
+  if (req.file) {
+    imagePath = "/uploads/" + req.file.filename;
+  } else if (imageUrl) {
+
+    imagePath = imageUrl;
+  }
+
   try {
-    const newPost = new Post({ title, body, author });
+    const newPost = new Post({ title, body, author, image: imagePath });
     await newPost.save();
     res.status(201).json(newPost);
   } catch (err) {
